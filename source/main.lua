@@ -87,7 +87,7 @@ end
 function togglePause()
     if gameState == playing then
         gameState = paused
-        player:gameStateAnimation()
+        player:stopAnimation()
     elseif gameState == paused then
         gameState = playing
         player:playAnimation()
@@ -97,34 +97,64 @@ end
 drawBase()
 createObstacles()
 function playdate.update ()
-    -- functionality for pausing the game
+    -- if the game is lost, then continuously print the game over message
+    if gameState == lost then
+        -- stop the player animation
+        player:stopAnimation()
+
+        -- update the highscore if necessary
+        if score > highestScore then
+            highestScore = score
+        end
+
+        -- print the gameover text
+        gfx.drawText("YOU LOSER!", 200, 60)
+        gfx.drawText("(B to reset)", 200, 80)
+        
+        -- allow the player to restart
+        if playdate.buttonIsPressed(playdate.kButtonB) then
+            reset()
+        end
+
+        return -- so that nothing below is executed (no pausing/unpausing during gameover screen)
+    end
+
+    -- toggle the paused state
     if playdate.buttonJustPressed(playdate.kButtonB) then
         togglePause()
     end
-    
-    -- Check that player is on the ground before jumping, this prevents mid air jumps
-    if gameState == playing then
-        if playdate.buttonIsPressed(playdate.kButtonUp) and falling == false then
-            player:moveBy(0, -4)
-            -- it's not realistic to jump off the screen
-            if player.y < 90 then
-                falling = true
-            end
-        else
-            falling = true
-            if player.y < 160 then
-                player:moveBy(0, 2)
-            else
-                falling = false
-            end
-        end
 
-        -- cant fire a projectile if you just did or if you are in the air
-        if playdate.buttonIsPressed(playdate.kButtonA) and isProjectileFired == false and falling == false then
-            projectileSprite:moveTo(45, 150)
-            projectileSprite:add()
-            isProjectileFired = true
+    -- don't do anything if the game is paused 
+    if gameState == paused then 
+        return  -- so that nothing below is executed
+    end
+
+
+    -- since two of the three gameStates are covered above (lost and paused), 
+    -- by this point gameState must be playing
+    
+
+    -- Check that player is on the ground before jumping, this prevents mid air jumps
+    if playdate.buttonIsPressed(playdate.kButtonUp) and falling == false then
+        player:moveBy(0, -4)
+        -- it's not realistic to jump off the screen
+        if player.y < 90 then
+            falling = true
         end
+    else
+        falling = true
+        if player.y < 160 then
+            player:moveBy(0, 2)
+        else
+            falling = false
+        end
+    end
+
+    -- cant fire a projectile if you just did or if you are in the air
+    if playdate.buttonIsPressed(playdate.kButtonA) and isProjectileFired == false and falling == false then
+        projectileSprite:moveTo(45, 150)
+        projectileSprite:add()
+        isProjectileFired = true
     end
 
     -- refresh screen
@@ -137,55 +167,47 @@ function playdate.update ()
     gfx.drawText("https://discord.gg/Pvv2Eu8FrF", 80, 210)
 
     -- obstacle movement and collision detection
-    if gameState == playing then
-        for i, obstacleSprite in pairs(groundObstacles) do
-            obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
-            if obstacleSprite.x >= -7 and obstacleSprite.x <= 407 then
-                obstacleSprite:add()
-            elseif obstacleSprite.x <= -7 then
-                obstacleSprite:remove()
-            end
+    for i, obstacleSprite in pairs(groundObstacles) do
+        -- move the obstacles towards the player
+        obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
 
-            -- if player runs into obstacle
-            if #player:overlappingSprites() > 0 then
-                gameState = lost
-                player:gameStateAnimation()
-                if score > highestScore then
-                    highestScore = score
-                end
-            end
+        -- if the obstacle is onscreen, render it
+        if obstacleSprite.x >= -7 and obstacleSprite.x <= 407 then
+            obstacleSprite:add()
+        -- otherwise, remove it
+        elseif obstacleSprite.x <= -7 then
+            obstacleSprite:remove()
+        end
 
-            -- player completed a round
-            if groundObstacles[groundObstacleCount].x <= 0 then
-                createObstacles()
-                score = score + 1
-                -- obstacles will come at player faster as game progresses
-                if (baseGroundObstacleSpeed + addedGroundObstacleSpeed > maxGroundObstacleSpeed) then
-                    addedGroundObstacleSpeed = addedGroundObstacleSpeed + -0.2
-                end
+        -- check if the player has hit an obstacle
+        if #player:overlappingSprites() > 0 then
+            gameState = lost
+        end
+
+        -- check if the player has completed a round (last obstacle in 
+        -- round has gone offscreen) and update points/obstacle
+        if groundObstacles[groundObstacleCount].x <= 0 then
+            createObstacles()
+            score += 1
+            -- obstacles will come at player faster as game progresses
+            if (baseGroundObstacleSpeed + addedGroundObstacleSpeed > maxGroundObstacleSpeed) then
+                addedGroundObstacleSpeed = addedGroundObstacleSpeed + -0.2
             end
         end
     end
 
-    -- player can only lose if they hit an obstacle;
-    -- if `gameState` is lost here, then quit
+    -- player can only lose if they hit an obstacle, so the game
+    -- should check to end only after the collision check
+    if gameState == lost then 
+        return -- (all gameover logic handled above)
+    end
 
     -- move the projectile
-    if gameState == playing and isProjectileFired == true then
+    if isProjectileFired == true then
         projectileSprite:moveBy(3, -3)
         if projectileSprite.x > 400 or projectileSprite.y < 0 then
             projectileSprite:remove()
             isProjectileFired = false
-        end
-    end
-
-    -- this ensures the message continues to be printed
-    if gameState == lost then
-        gfx.drawText("YOU LOSER!", 200, 60)
-        gfx.drawText("(B to reset)", 200, 80)
-        
-        if playdate.buttonIsPressed(playdate.kButtonB) then
-            reset()
         end
     end
 end
