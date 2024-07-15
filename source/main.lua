@@ -25,9 +25,13 @@ local groundObstacleXValues = {}
 local addedGroundObstacleSpeed = 0
 
 local falling = false -- refers to player
-local stop = 0  -- 0 for normal gameplay, 1 for pause, 2 for loss
 local score = 0
 local highestScore = 0
+
+-- better scheme for tracking gamestate
+-- 0 for normal gameplay, 1 for pause, 2 for loss
+local playing <const>, paused <const>, lost <const> = 0, 1, 2
+local gameState = playing
 
 function drawBase ()
     -- create ground
