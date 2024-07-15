@@ -39,9 +39,6 @@ local highestScore = 0
 local playing <const>, paused <const>, lost <const> = 0, 1, 2
 local gameState = playing
 
--- debugging
-local m = 0
-
 function drawBase ()
     -- create ground
     local groundImage <const> = gfx.image.new(400, 5, gfx.kColorBlack)
@@ -120,9 +117,6 @@ function jumpKinematics()
         airAcceleration = gravity
     end
 
-    print("velocity: " .. velocity)
-    print("air acceleration: " .. airAcceleration .. "\n\n")
-
     -- kinematics
     -- have: v0, dt, a
     -- need: dy, vf
@@ -198,7 +192,7 @@ function playdate.update ()
     jumpKinematics()
 
     -- cant fire a projectile if you just did or if you are in the air
-    if playdate.buttonIsPressed(playdate.kButtonA) and ~isProjectileFired and grounded then
+    if playdate.buttonIsPressed(playdate.kButtonA) and not isProjectileFired and grounded then
         projectileSprite:moveTo(45, 150)
         projectileSprite:add()
         isProjectileFired = true
