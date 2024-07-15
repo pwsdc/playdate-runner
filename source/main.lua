@@ -24,7 +24,13 @@ local groundObstacles = {}  -- holds all obstacles, we do this because we need t
 local groundObstacleXValues = {}
 local addedGroundObstacleSpeed = 0
 
-local falling = false -- refers to player
+-- for jumping
+local grounded = true -- refers to player
+local gravity <const> = 400
+local airAcceleration = gravity
+local velocity = 0
+
+-- scorekeeping
 local score = 0
 local highestScore = 0
 
@@ -32,6 +38,9 @@ local highestScore = 0
 -- 0 for normal gameplay, 1 for pause, 2 for loss
 local playing <const>, paused <const>, lost <const> = 0, 1, 2
 local gameState = playing
+
+-- debugging
+local m = 0
 
 function drawBase ()
     -- create ground
@@ -94,6 +103,51 @@ function togglePause()
     end
 end
 
+
+-- applies projectile motion to the player when jumping/falling
+-- holding the up key decreases downwards acceleration (jump higher/fall slower)
+function jumpKinematics()
+    -- if the player is on the ground, no acceleration should apply
+    if grounded then return end
+
+    -- determine how fast to accelerate (fall) based on input
+    -- (positive acceleration since down is positive)
+    if playdate.buttonIsPressed(playdate.kButtonUp) then
+        airAcceleration = 0.6 * gravity
+    elseif playdate.buttonIsPressed(playdate.kButtonDown) then
+        airAcceleration = 1.5 * gravity
+    else
+        airAcceleration = gravity
+    end
+
+    print("velocity: " .. velocity)
+    print("air acceleration: " .. airAcceleration .. "\n\n")
+
+    -- kinematics
+    -- have: v0, dt, a
+    -- need: dy, vf
+    
+    -- dy = v0t + .5at^2
+    -- (t = 1/f = 1/30)
+    local deltaY = (velocity * (1/30)) + (0.5 * airAcceleration * (1/30)^2)
+
+    -- vf = v0 + at
+    -- dv = at
+    local deltaV = airAcceleration * 1/30
+
+    -- update the player's position and velocity
+    player:moveBy(0, deltaY)
+    velocity += deltaV
+
+    -- make sure grounded is set properly
+    if player.y >= 160 then 
+        grounded = true
+        velocity = 0
+        player:moveTo(30, 160) -- realign the player in case of bad frame collision
+     end
+
+end
+
 drawBase()
 createObstacles()
 function playdate.update ()
@@ -134,24 +188,17 @@ function playdate.update ()
     -- by this point gameState must be playing
     
 
-    -- Check that player is on the ground before jumping, this prevents mid air jumps
-    if playdate.buttonIsPressed(playdate.kButtonUp) and falling == false then
-        player:moveBy(0, -4)
-        -- it's not realistic to jump off the screen
-        if player.y < 90 then
-            falling = true
-        end
-    else
-        falling = true
-        if player.y < 160 then
-            player:moveBy(0, 2)
-        else
-            falling = false
-        end
+    -- jumping
+    if playdate.buttonIsPressed(playdate.kButtonUp) and grounded then
+        velocity = -gravity * 0.5 -- negative is up
+        grounded = false
     end
 
+    -- y axis kinematics
+    jumpKinematics()
+
     -- cant fire a projectile if you just did or if you are in the air
-    if playdate.buttonIsPressed(playdate.kButtonA) and isProjectileFired == false and falling == false then
+    if playdate.buttonIsPressed(playdate.kButtonA) and ~isProjectileFired and grounded then
         projectileSprite:moveTo(45, 150)
         projectileSprite:add()
         isProjectileFired = true
