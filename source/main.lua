@@ -81,7 +81,17 @@ function reset ()
     projectileSprite:remove()
     createObstacles()
     player:playAnimation()
-    stop = 0
+    gameState = playing
+end
+
+function togglePause()
+    if gameState == playing then
+        gameState = paused
+        player:gameStateAnimation()
+    elseif gameState == paused then
+        gameState = playing
+        player:playAnimation()
+    end
 end
 
 drawBase()
@@ -89,17 +99,11 @@ createObstacles()
 function playdate.update ()
     -- functionality for pausing the game
     if playdate.buttonJustPressed(playdate.kButtonB) then
-        if stop == 0 then
-            stop = 1
-            player:stopAnimation()
-        elseif stop == 1 then
-            stop = 0
-            player:playAnimation()
-        end
+        togglePause()
     end
     
     -- Check that player is on the ground before jumping, this prevents mid air jumps
-    if stop == 0 then
+    if gameState == playing then
         if playdate.buttonIsPressed(playdate.kButtonUp) and falling == false then
             player:moveBy(0, -4)
             -- it's not realistic to jump off the screen
@@ -132,7 +136,8 @@ function playdate.update ()
     gfx.drawText("Like the game? Join Programming Club today!", 30, 185)
     gfx.drawText("https://discord.gg/Pvv2Eu8FrF", 80, 210)
 
-    if stop == 0 then
+    -- obstacle movement and collision detection
+    if gameState == playing then
         for i, obstacleSprite in pairs(groundObstacles) do
             obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
             if obstacleSprite.x >= -7 and obstacleSprite.x <= 407 then
@@ -143,8 +148,8 @@ function playdate.update ()
 
             -- if player runs into obstacle
             if #player:overlappingSprites() > 0 then
-                stop = 2
-                player:stopAnimation()
+                gameState = lost
+                player:gameStateAnimation()
                 if score > highestScore then
                     highestScore = score
                 end
@@ -162,8 +167,11 @@ function playdate.update ()
         end
     end
 
+    -- player can only lose if they hit an obstacle;
+    -- if `gameState` is lost here, then quit
+
     -- move the projectile
-    if stop == 0 and isProjectileFired == true then
+    if gameState == playing and isProjectileFired == true then
         projectileSprite:moveBy(3, -3)
         if projectileSprite.x > 400 or projectileSprite.y < 0 then
             projectileSprite:remove()
@@ -172,7 +180,7 @@ function playdate.update ()
     end
 
     -- this ensures the message continues to be printed
-    if stop == 2 then
+    if gameState == lost then
         gfx.drawText("YOU LOSER!", 200, 60)
         gfx.drawText("(B to reset)", 200, 80)
         
