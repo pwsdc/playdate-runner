@@ -204,7 +204,7 @@ function playdate.update ()
     gfx.drawText(score, 5, 5)
     gfx.drawText("High score: ", 5, 25)
     gfx.drawText(highestScore, 95, 25)
-    gfx.drawText("Like the game? Join Programming Club today!", 30, 185)
+    gfx.drawText("Like the game? Join Software Dev. Club today!", 25, 185)
     gfx.drawText("https://discord.gg/Pvv2Eu8FrF", 80, 210)
 
     -- obstacle movement and collision detection
