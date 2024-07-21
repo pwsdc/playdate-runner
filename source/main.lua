@@ -4,6 +4,7 @@
 import 'AnimatedSprite.lua'
 
 local gfx <const> = playdate.graphics  -- common in playdate games, makes code cleaner
+local snd <const> = playdate.sound  -- for handling sound effects
 
 -- create player
 -- make sure to update sprite from level 1-1 example
@@ -38,6 +39,11 @@ local highestScore = 0
 -- 0 for normal gameplay, 1 for pause, 2 for loss
 local playing <const>, paused <const>, lost <const> = 0, 1, 2
 local gameState = playing
+
+-- load sound effects
+local jumpSound <const> = snd.sampleplayer.new("sound/jump1.wav")
+local shootSound <const> = snd.sampleplayer.new("sound/shoot1.wav")
+local loseSound <const> = snd.sampleplayer.new("sound/lose.wav")
 
 function drawBase ()
     -- create ground
@@ -186,6 +192,7 @@ function playdate.update ()
     if playdate.buttonIsPressed(playdate.kButtonUp) and grounded then
         velocity = -gravity * 0.5 -- negative is up
         grounded = false
+        jumpSound:play()
     end
 
     -- y axis kinematics
@@ -196,6 +203,7 @@ function playdate.update ()
         projectileSprite:moveTo(45, 150)
         projectileSprite:add()
         isProjectileFired = true
+        shootSound:play()
     end
 
     -- refresh screen
@@ -223,6 +231,7 @@ function playdate.update ()
         -- check if the player has hit an obstacle
         if #player:overlappingSprites() > 0 then
             gameState = lost
+            loseSound:play()
         end
 
         -- check if the player has completed a round (last obstacle in 
