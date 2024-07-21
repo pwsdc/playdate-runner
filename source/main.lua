@@ -9,7 +9,9 @@ local snd <const> = playdate.sound  -- for handling sound effects
 -- create player
 -- make sure to update sprite from level 1-1 example
 local imageTable <const> = gfx.imagetable.new("img/player-table-16-32")
+local imageTableDuck <const> = gfx.imagetable.new("img/ducking-table-16-32")
 local player <const> = AnimatedSprite.new(imageTable)
+local playerDuck <const> = AnimatedSprite.new(imageTableDuck)
 
 -- create projectile that player shoots
 local projectileImage <const> = gfx.image.new(5, 5, gfx.kColorBlack)
@@ -31,6 +33,9 @@ local gravity <const> = 400
 local airAcceleration = gravity
 local velocity = 0
 
+-- for ducking
+local isDucking = false
+
 -- scorekeeping
 local score = 0
 local highestScore = 0
@@ -44,6 +49,7 @@ local gameState = playing
 local jumpSound <const> = snd.sampleplayer.new("sound/jump1.wav")
 local shootSound <const> = snd.sampleplayer.new("sound/shoot1.wav")
 local loseSound <const> = snd.sampleplayer.new("sound/lose.wav")
+local duckSound <const> = snd.sampleplayer.new("sound/ducking.wav")
 
 function drawBase ()
     -- create ground
@@ -183,13 +189,30 @@ function playdate.update ()
         return  -- so that nothing below is executed
     end
 
-
-    -- since two of the three gameStates are covered above (lost and paused), 
-    -- by this point gameState must be playing
-    
+    -- Ducking logic
+    if playdate.buttonIsPressed(playdate.kButtonDown) and grounded then
+        if not isDucking then
+            player:remove()  -- Remove player sprite when ducking
+            playerDuck:add()  -- Add ducking sprite
+            playerDuck:playAnimation()  -- Start animation
+            playerDuck:setCollideRect(0, 10, 16, 17)  -- Adjust collision box for ducking (may need to adjust this value again)
+            playerDuck:moveTo(player.x, 170)  -- Move player down (to create the illusion of ducking) 
+            duckSound:play()
+            isDucking = true
+        end
+    else
+        if isDucking then
+            playerDuck:remove()  -- Remove ducking sprite when not ducking
+            player:add()  -- Add player sprite
+            player:setCollideRect(0, 0, 16, 27)  -- Reset collision box when not ducking
+            player:moveTo(player.x, 160)  -- Reset player position
+            player:playAnimation()  -- Restart animation if stopped
+            isDucking = false
+        end
+    end
 
     -- jumping
-    if playdate.buttonIsPressed(playdate.kButtonUp) and grounded then
+    if playdate.buttonIsPressed(playdate.kButtonUp) and grounded and not isDucking then
         velocity = -gravity * 0.5 -- negative is up
         grounded = false
         jumpSound:play()
