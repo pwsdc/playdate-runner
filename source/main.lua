@@ -369,6 +369,10 @@ function playdate.update ()
     -- title screen
     if gameState == title then titleScreenLogic() return end
 
+    gfx.drawText(score, 5, 5)
+    gfx.drawText("Like the game? Join Software Dev. Club today!", 25, 185)
+    gfx.drawText("https://discord.gg/Pvv2Eu8FrF", 80, 210)
+
     if gameState == start then
         drawBase()
         createObstacles()
@@ -425,10 +429,6 @@ function playdate.update ()
         isProjectileFired = true
         shootSound:play()
     end
-
-    gfx.drawText(score, 5, 5)
-    gfx.drawText("Like the game? Join Software Dev. Club today!", 25, 185)
-    gfx.drawText("https://discord.gg/Pvv2Eu8FrF", 80, 210)
 
     -- obstacle movement and collision detection
     obstacleLogic()
