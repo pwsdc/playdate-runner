@@ -254,10 +254,8 @@ end
 function changeLetter(num, forwards)
 
     -- whether to increment or decrement the character
-    local changeBy
-    if forwards then changeBy = 1
-    else changeBy = -1 
-    end
+    local changeBy = -1
+    if forwards then changeBy = 1 end
     
     -- change the character
     nameLetters[num] = string.char(nameLetters[num]:byte() + changeBy)
