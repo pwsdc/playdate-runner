@@ -300,6 +300,27 @@ function titleScreenLogic()
     end
 end
 
+function duck()
+    if not isDucking then
+        player:remove()  -- Remove player sprite when ducking
+        playerDuck:add()  -- Add ducking sprite
+        playerDuck:playAnimation()  -- Start animation
+        playerDuck:setCollideRect(0, 10, 16, 17)  -- Adjust collision box for ducking (may need to adjust this value again)
+        playerDuck:moveTo(player.x, 170)  -- Move player down (to create the illusion of ducking) 
+        duckSound:play()
+        isDucking = true
+    end
+end
+
+function unduck() 
+    playerDuck:remove()  -- Remove ducking sprite when not ducking
+    player:add()  -- Add player sprite
+    player:setCollideRect(0, 0, 16, 27)  -- Reset collision box when not ducking
+    player:moveTo(player.x, 160)  -- Reset player position
+    player:playAnimation()  -- Restart animation if stopped
+    isDucking = false
+end
+
 -- Loads saved data
 local gameData = playdate.datastore.read()
 if gameData ~= nil then
@@ -349,24 +370,9 @@ function playdate.update ()
 
     -- Ducking logic
     if playdate.buttonIsPressed(playdate.kButtonDown) and grounded then
-        if not isDucking then
-            player:remove()  -- Remove player sprite when ducking
-            playerDuck:add()  -- Add ducking sprite
-            playerDuck:playAnimation()  -- Start animation
-            playerDuck:setCollideRect(0, 10, 16, 17)  -- Adjust collision box for ducking (may need to adjust this value again)
-            playerDuck:moveTo(player.x, 170)  -- Move player down (to create the illusion of ducking) 
-            duckSound:play()
-            isDucking = true
-        end
-    else
-        if isDucking then
-            playerDuck:remove()  -- Remove ducking sprite when not ducking
-            player:add()  -- Add player sprite
-            player:setCollideRect(0, 0, 16, 27)  -- Reset collision box when not ducking
-            player:moveTo(player.x, 160)  -- Reset player position
-            player:playAnimation()  -- Restart animation if stopped
-            isDucking = false
-        end
+        duck()
+    elseif isDucking then
+        unduck()
     end
 
     -- jumping
