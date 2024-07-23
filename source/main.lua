@@ -364,7 +364,7 @@ end
 
 function playdate.update ()
     -- refresh screen
-    gfx.sprite.update()
+    if gameState ~= lost then gfx.sprite.update() end
 
     -- title screen
     if gameState == title then titleScreenLogic() return end
