@@ -319,6 +319,8 @@ function playdate.update ()
         drawBase()
         createObstacles()
         gameState = playing
+        
+        return -- not necessary, but allows cleaner code below (and doesn't cost much)
     end
     
     -- if the game is lost, then continuously print the game over message
@@ -338,7 +340,7 @@ function playdate.update ()
     end
 
     -- toggle the paused state
-    if gameState ~= title and gameState ~= lost and gameState ~= start and playdate.buttonJustPressed(playdate.kButtonB) then
+    if playdate.buttonJustPressed(playdate.kButtonB) then
         togglePause()
     end
 
@@ -346,7 +348,7 @@ function playdate.update ()
     if gameState == paused then return end
 
     -- Ducking logic
-    if playdate.buttonIsPressed(playdate.kButtonDown) and grounded and gameState == playing then
+    if playdate.buttonIsPressed(playdate.kButtonDown) and grounded then
         if not isDucking then
             player:remove()  -- Remove player sprite when ducking
             playerDuck:add()  -- Add ducking sprite
@@ -368,68 +370,66 @@ function playdate.update ()
     end
 
     -- jumping
-    if gameState == playing and playdate.buttonIsPressed(playdate.kButtonUp) and grounded and not isDucking then
+    if playdate.buttonIsPressed(playdate.kButtonUp) and grounded and not isDucking then
         velocity = -gravity * 0.5 -- negative is up
         grounded = false
         jumpSound:play()
     end
 
     -- y axis kinematics
-    if gameState == playing then jumpKinematics() end
+    jumpKinematics()
 
     -- cant fire a projectile if you just did or if you are in the air
-    if gameState == playing and playdate.buttonJustPressed(playdate.kButtonA) and not isProjectileFired and grounded then
+    if playdate.buttonJustPressed(playdate.kButtonA) and not isProjectileFired and grounded then
         projectileSprite:moveTo(45, 150)
         projectileSprite:add()
         isProjectileFired = true
         shootSound:play()
     end
 
-    if gameState == playing then
-        gfx.drawText(score, 5, 5)
-        gfx.drawText("Like the game? Join Software Dev. Club today!", 25, 185)
-        gfx.drawText("https://discord.gg/Pvv2Eu8FrF", 80, 210)
+    gfx.drawText(score, 5, 5)
+    gfx.drawText("Like the game? Join Software Dev. Club today!", 25, 185)
+    gfx.drawText("https://discord.gg/Pvv2Eu8FrF", 80, 210)
 
-        -- obstacle movement and collision detection
-        for i, obstacleSprite in pairs(groundObstacles) do
-            -- move the obstacles towards the player
-            obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
+    -- obstacle movement and collision detection
+    for i, obstacleSprite in pairs(groundObstacles) do
+        -- move the obstacles towards the player
+        obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
 
-            -- if the obstacle is onscreen, render it
-            if obstacleSprite.x >= -7 and obstacleSprite.x <= 407 then
-                obstacleSprite:add()
-            -- otherwise, remove it
-            elseif obstacleSprite.x <= -7 then
-                obstacleSprite:remove()
-            end
+        -- if the obstacle is onscreen, render it
+        if obstacleSprite.x >= -7 and obstacleSprite.x <= 407 then
+            obstacleSprite:add()
+        -- otherwise, remove it
+        elseif obstacleSprite.x <= -7 then
+            obstacleSprite:remove()
+        end
 
-            -- check if the player has hit an obstacle
-            if #player:overlappingSprites() > 0 then
-                gameState = lost
+        -- check if the player has hit an obstacle
+        if #player:overlappingSprites() > 0 then
+            gameState = lost
 
-                -- update the highscore if necessary
-                addHighScore()
-            
-                loseSound:play()
+            -- update the highscore if necessary
+            addHighScore()
+        
+            loseSound:play()
 
-                break
-            end
+            break
+        end
 
-            -- check if the player has completed a round (last obstacle in 
-            -- round has gone offscreen) and update points/obstacle
-            if groundObstacles[groundObstacleCount].x <= 0 then
-                createObstacles()
-                score += 1
-                -- obstacles will come at player faster as game progresses
-                if (baseGroundObstacleSpeed + addedGroundObstacleSpeed > maxGroundObstacleSpeed) then
-                    addedGroundObstacleSpeed = addedGroundObstacleSpeed + -0.2
-                end
+        -- check if the player has completed a round (last obstacle in 
+        -- round has gone offscreen) and update points/obstacle
+        if groundObstacles[groundObstacleCount].x <= 0 then
+            createObstacles()
+            score += 1
+            -- obstacles will come at player faster as game progresses
+            if (baseGroundObstacleSpeed + addedGroundObstacleSpeed > maxGroundObstacleSpeed) then
+                addedGroundObstacleSpeed = addedGroundObstacleSpeed + -0.2
             end
         end
     end
 
     -- move the projectile
-    if gameState == playing and isProjectileFired == true then
+    if isProjectileFired == true then
         projectileSprite:moveBy(3, -3)
         if projectileSprite.x > 400 or projectileSprite.y < 0 then
             projectileSprite:remove()
