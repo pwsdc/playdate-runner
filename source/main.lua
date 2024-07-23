@@ -252,9 +252,6 @@ function jumpKinematics()
 end
 
 function changeLetter(num, forwards)
-    
-    -- lua tables indexed at 1
-    
 
     -- whether to increment or decrement the character
     local changeBy
