@@ -4,11 +4,14 @@
 import 'AnimatedSprite.lua'
 
 local gfx <const> = playdate.graphics  -- common in playdate games, makes code cleaner
+local snd <const> = playdate.sound  -- for handling sound effects
 
 -- create player
 -- make sure to update sprite from level 1-1 example
 local imageTable <const> = gfx.imagetable.new("img/player-table-16-32")
+local imageTableDuck <const> = gfx.imagetable.new("img/ducking-table-16-32")
 local player <const> = AnimatedSprite.new(imageTable)
+local playerDuck <const> = AnimatedSprite.new(imageTableDuck)
 
 -- create projectile that player shoots
 local projectileImage <const> = gfx.image.new(5, 5, gfx.kColorBlack)
@@ -34,6 +37,9 @@ local gravity <const> = 400
 local airAcceleration = gravity
 local velocity = 0
 
+-- for ducking
+local isDucking = false
+
 -- scorekeeping
 local score = 0
 local highestScores = {}
@@ -49,6 +55,12 @@ local nameIndex = 1
 -- 0 for normal gameplay, 1 for pause, 2 for loss
 local playing <const>, paused <const>, lost <const>, title <const>, start <const> = 0, 1, 2, 3, 4
 local gameState = title
+
+-- load sound effects
+local jumpSound <const> = snd.sampleplayer.new("sound/jump1.wav")
+local shootSound <const> = snd.sampleplayer.new("sound/shoot1.wav")
+local loseSound <const> = snd.sampleplayer.new("sound/lose.wav")
+local duckSound <const> = snd.sampleplayer.new("sound/ducking.wav")
 
 function saveGameData ()
     -- save high score leaderboard
@@ -280,10 +292,33 @@ function playdate.update ()
     -- don't do anything if the game is paused 
     if gameState == paused then return end
 
+    -- Ducking logic
+    if playdate.buttonIsPressed(playdate.kButtonDown) and grounded and gameState == playing then
+        if not isDucking then
+            player:remove()  -- Remove player sprite when ducking
+            playerDuck:add()  -- Add ducking sprite
+            playerDuck:playAnimation()  -- Start animation
+            playerDuck:setCollideRect(0, 10, 16, 17)  -- Adjust collision box for ducking (may need to adjust this value again)
+            playerDuck:moveTo(player.x, 170)  -- Move player down (to create the illusion of ducking) 
+            duckSound:play()
+            isDucking = true
+        end
+    else
+        if isDucking then
+            playerDuck:remove()  -- Remove ducking sprite when not ducking
+            player:add()  -- Add player sprite
+            player:setCollideRect(0, 0, 16, 27)  -- Reset collision box when not ducking
+            player:moveTo(player.x, 160)  -- Reset player position
+            player:playAnimation()  -- Restart animation if stopped
+            isDucking = false
+        end
+    end
+
     -- jumping
-    if gameState == playing and playdate.buttonIsPressed(playdate.kButtonUp) and grounded then
+    if gameState == playing and playdate.buttonIsPressed(playdate.kButtonUp) and grounded and not isDucking then
         velocity = -gravity * 0.5 -- negative is up
         grounded = false
+        jumpSound:play()
     end
 
     -- y axis kinematics
@@ -294,6 +329,7 @@ function playdate.update ()
         projectileSprite:moveTo(45, 150)
         projectileSprite:add()
         isProjectileFired = true
+        shootSound:play()
     end
 
     -- refresh screen
@@ -302,7 +338,7 @@ function playdate.update ()
     -- title screen
     if gameState == title then
         drawTitle()
-
+        
         -- switch between char positions in name
         if playdate.buttonJustPressed(playdate.kButtonLeft) and nameIndex > 1 then
             nameIndex -= 1
@@ -369,6 +405,8 @@ function playdate.update ()
 
                 -- update the highscore if necessary
                 addHighScore()
+            
+                loseSound:play()
 
                 break
             end
