@@ -321,6 +321,44 @@ function unduck()
     isDucking = false
 end
 
+function obstacleLogic()
+    for i, obstacleSprite in pairs(groundObstacles) do
+        -- move the obstacles towards the player
+        obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
+
+        -- if the obstacle is onscreen, render it
+        if obstacleSprite.x >= -7 and obstacleSprite.x <= 407 then
+            obstacleSprite:add()
+        -- otherwise, remove it
+        elseif obstacleSprite.x <= -7 then
+            obstacleSprite:remove()
+        end
+
+        -- check if the player has hit an obstacle
+        if #player:overlappingSprites() > 0 then
+            gameState = lost
+
+            -- update the highscore if necessary
+            addHighScore()
+        
+            loseSound:play()
+
+            break
+        end
+
+        -- check if the player has completed a round (last obstacle in 
+        -- round has gone offscreen) and update points/obstacle
+        if groundObstacles[groundObstacleCount].x <= 0 then
+            createObstacles()
+            score += 1
+            -- obstacles will come at player faster as game progresses
+            if (baseGroundObstacleSpeed + addedGroundObstacleSpeed > maxGroundObstacleSpeed) then
+                addedGroundObstacleSpeed = addedGroundObstacleSpeed + -0.2
+            end
+        end
+    end
+end
+
 -- Loads saved data
 local gameData = playdate.datastore.read()
 if gameData ~= nil then
@@ -398,41 +436,7 @@ function playdate.update ()
     gfx.drawText("https://discord.gg/Pvv2Eu8FrF", 80, 210)
 
     -- obstacle movement and collision detection
-    for i, obstacleSprite in pairs(groundObstacles) do
-        -- move the obstacles towards the player
-        obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
-
-        -- if the obstacle is onscreen, render it
-        if obstacleSprite.x >= -7 and obstacleSprite.x <= 407 then
-            obstacleSprite:add()
-        -- otherwise, remove it
-        elseif obstacleSprite.x <= -7 then
-            obstacleSprite:remove()
-        end
-
-        -- check if the player has hit an obstacle
-        if #player:overlappingSprites() > 0 then
-            gameState = lost
-
-            -- update the highscore if necessary
-            addHighScore()
-        
-            loseSound:play()
-
-            break
-        end
-
-        -- check if the player has completed a round (last obstacle in 
-        -- round has gone offscreen) and update points/obstacle
-        if groundObstacles[groundObstacleCount].x <= 0 then
-            createObstacles()
-            score += 1
-            -- obstacles will come at player faster as game progresses
-            if (baseGroundObstacleSpeed + addedGroundObstacleSpeed > maxGroundObstacleSpeed) then
-                addedGroundObstacleSpeed = addedGroundObstacleSpeed + -0.2
-            end
-        end
-    end
+    obstacleLogic()
 
     -- move the projectile
     if isProjectileFired == true then
