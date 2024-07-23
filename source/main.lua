@@ -46,9 +46,7 @@ local highestScores = {}
 local highestScoresLength = 0
 local maxHighScores <const> = 5
 local name = "AAA"
-local l1 = 65
-local l2 = 65
-local l3 = 65
+local nameLetters = {'A', 'A', 'A'}
 local nameIndex = 1
 
 -- better scheme for tracking gamestate
@@ -100,9 +98,9 @@ function drawTitle ()
     
     -- enter name msg
     gfx.drawText("Enter name: ", 140, 200)
-    gfx.drawText(string.char(l1), 240, 200)
-    gfx.drawText(string.char(l2), 252, 200)
-    gfx.drawText(string.char(l3), 264, 200)
+    gfx.drawText(nameLetters[1], 240, 200)
+    gfx.drawText(nameLetters[2], 252, 200)
+    gfx.drawText(nameLetters[3], 264, 200)
 
     -- start msg
     gfx.drawText("Press A to Start", 144, 220)
@@ -253,6 +251,55 @@ function jumpKinematics()
     end
 end
 
+function changeLetter(num, forwards)
+    
+    -- lua tables indexed at 1
+    
+
+    -- whether to increment or decrement the character
+    local changeBy
+    if forwards then changeBy = 1
+    else changeBy = -1 
+    end
+    
+    -- change the character
+    nameLetters[num] = string.char(nameLetters[num]:byte() + changeBy)
+
+    -- character wrapping ('A' <-> 'Z')
+    if nameLetters[num]:byte() > 90 then
+        nameLetters[num] = string.char(65)
+    elseif nameLetters[num]:byte() < 65 then
+        nameLetters[num] = string.char(90)
+    end
+end
+
+-- displays title screen, lets player change name, lets players tart game
+function titleScreenLogic()
+    drawTitle()
+        
+    -- switch between char positions in name
+    if playdate.buttonJustPressed(playdate.kButtonLeft) and nameIndex > 1 then
+        nameIndex -= 1
+    end
+    if playdate.buttonJustPressed(playdate.kButtonRight) and nameIndex < 3 then
+        nameIndex += 1
+    end
+
+    -- update the actual character
+    if playdate.buttonJustPressed(playdate.kButtonUp) then 
+        changeLetter(nameIndex, true)
+    elseif playdate.buttonJustPressed(playdate.kButtonDown) then
+        changeLetter(nameIndex, false)
+    end
+
+    -- form name from character
+    name = nameLetters[1] .. nameLetters[2] .. nameLetters[3]
+
+    if playdate.buttonJustPressed(playdate.kButtonA) then
+        gameState = start
+    end
+end
+
 -- Loads saved data
 local gameData = playdate.datastore.read()
 if gameData ~= nil then
@@ -262,6 +309,12 @@ else
 end
 
 function playdate.update ()
+    -- refresh screen
+    gfx.sprite.update()
+
+    -- title screen
+    if gameState == title then titleScreenLogic() return end
+
     if gameState == start then
         drawBase()
         createObstacles()
@@ -330,55 +383,6 @@ function playdate.update ()
         projectileSprite:add()
         isProjectileFired = true
         shootSound:play()
-    end
-
-    -- refresh screen
-    gfx.sprite.update()
-
-    -- title screen
-    if gameState == title then
-        drawTitle()
-        
-        -- switch between char positions in name
-        if playdate.buttonJustPressed(playdate.kButtonLeft) and nameIndex > 1 then
-            nameIndex -= 1
-        end
-        if playdate.buttonJustPressed(playdate.kButtonRight) and nameIndex < 3 then
-            nameIndex += 1
-        end
-
-        -- update the actual character
-        if playdate.buttonJustPressed(playdate.kButtonUp) then
-            if nameIndex == 1 then
-                l1 += 1
-                if l1 > 90 then l1 = 65 end
-            elseif nameIndex == 2 then
-                l2 += 1
-                if l2 > 90 then l2 = 65 end
-            elseif nameIndex == 3 then
-                l3 += 1
-                if l3 > 90 then l3 = 65 end
-            end
-        end
-        if playdate.buttonJustPressed(playdate.kButtonDown) then
-            if nameIndex == 1 then
-                l1 -= 1
-                if l1 < 65 then l1 = 90 end
-            elseif nameIndex == 2 then
-                l2 -= 1
-                if l2 < 65 then l2 = 90 end
-            elseif nameIndex == 3 then
-                l3 -= 1
-                if l3 < 65 then l3 = 90 end
-            end
-        end
-
-        -- form name from character
-        name = string.char(l1) .. string.char(l2) .. string.char(l3)
-
-        if playdate.buttonJustPressed(playdate.kButtonA) then
-            gameState = start
-        end
     end
 
     if gameState == playing then
