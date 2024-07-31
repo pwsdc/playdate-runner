@@ -148,6 +148,7 @@ function reset ()
     isProjectileFired = false
     projectileSprite:remove()
     player:remove()
+    playerDuck:remove()
     for i in pairs(groundObstacles) do
         groundObstacles[i]:remove()
     end
@@ -330,7 +331,7 @@ function obstacleLogic()
         end
 
         -- check if the player has hit an obstacle
-        if #player:overlappingSprites() > 0 then
+        if #player:overlappingSprites() > 0 or #playerDuck:overlappingSprites() > 0 then
             gameState = lost
 
             -- update the highscore if necessary
@@ -385,6 +386,7 @@ function playdate.update ()
     if gameState == lost then
         -- stop the player animation
         player:stopAnimation()
+        playerDuck:stopAnimation()
 
         -- print reset text
         gfx.drawText("(B to reset)", 200, 80)
