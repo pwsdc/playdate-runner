@@ -1,0 +1,19 @@
+{
+    "Lua.runtime.nonstandardSymbol": [
+        "+=",
+        "-=",
+        "*=",
+        "/="
+    ],
+    "Lua.diagnostics.globals": [
+        "AnimatedSprite",
+        "playdate",
+        "import",
+        "class",
+        "json",
+        "printTable",
+    ],
+    "Lua.diagnostics.disable": [
+        "lowercase-global",
+    ],
+}
