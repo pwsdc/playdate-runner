@@ -165,7 +165,7 @@ function numOfHighScores()
     end
 
     highestScoresLength = 0
-    for j in pairs(highestScores) do
+    for _ in pairs(highestScores) do
         highestScoresLength += 1
     end
 
@@ -322,7 +322,7 @@ function unduck()
 end
 
 function obstacleLogic()
-    for i, obstacleSprite in pairs(groundObstacles) do
+    for _, obstacleSprite in pairs(groundObstacles) do
         -- move the obstacles towards the player
         obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
 
