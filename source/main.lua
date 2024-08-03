@@ -124,7 +124,7 @@ function drawBase ()
 end
 
 function createObstacles ()
-    local baseX = 400; -- this is the edge of the playdate screen, but it could be something else
+    local baseX = 400 -- this is the edge of the playdate screen, but it could be something else
     local randNum = 0
 
     for i = 1, groundObstacleCount, 1 do
@@ -151,6 +151,17 @@ function createObstacles ()
 
         -- move to starting position (can be used to reposition)
         groundObstacles[i]:moveTo(groundObstacleXValues[i], valueY)
+        
+        -- if randNum is greater than 95, stack multiple obstacles on top of each other
+        -- so that the player must duck (5% chance of this occurring, will occur during above ground obstacle placement)
+        if randNum >= 95 then
+            for j = 1, 2 do
+                local stackedObstacle = gfx.sprite.new(groundObstacleImage)
+                stackedObstacle:setCollideRect(0, 0, stackedObstacle:getSize())
+                stackedObstacle:moveTo(groundObstacleXValues[i], valueY - 30 * j) -- stack on top
+                table.insert(groundObstacles, stackedObstacle)
+            end
+        end
     end
 end
 
