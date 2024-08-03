@@ -1,3 +1,4 @@
 \output.pdx
 \.vscode\*
 !\.vscode\settings.json
+.luarc.json
