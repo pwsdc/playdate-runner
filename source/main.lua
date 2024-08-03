@@ -125,8 +125,20 @@ end
 
 function createObstacles ()
     local baseX = 400; -- this is the edge of the playdate screen, but it could be something else
-    
+    local randNum = 0
+
     for i = 1, groundObstacleCount, 1 do
+        -- generate a random number between 0 and 100
+        randNum = math.random(0, 100)
+
+        -- set the y value based on the random number
+        -- 30% chance of y value being at 140 (above ground) 
+        -- 70% chance of y value being at 160 (at ground level)
+        local valueY = 160
+        if randNum >= 70 then
+            valueY = 140
+        end
+
         -- generate x coords for obstacles
         groundObstacleXValues[i] = math.random(baseX, baseX + 50)
         baseX += 175
@@ -138,7 +150,7 @@ function createObstacles ()
         end
 
         -- move to starting position (can be used to reposition)
-        groundObstacles[i]:moveTo(groundObstacleXValues[i], 160)
+        groundObstacles[i]:moveTo(groundObstacleXValues[i], valueY)
     end
 end
 
