@@ -24,6 +24,7 @@ local groundSprite <const> = gfx.sprite.new(groundImage)
 
 -- create ground obstacles player jumps over
 local groundObstacleImage <const> = gfx.image.new(20, 30, gfx.kColorBlack)
+local groundObstacleImage2 <const> = gfx.image.new(20, 80, gfx.kColorBlack)
 local groundObstacleCount <const> = 5  -- amount of obstacles in each "round"
 local baseGroundObstacleSpeed <const> = -2  -- obstacles are moving left, so this is negative
 local maxGroundObstacleSpeed <const> = -5
@@ -145,23 +146,18 @@ function createObstacles ()
 
         -- create obstacle if not exist
         if groundObstacles[i] == nil then
-            groundObstacles[i] = gfx.sprite.new(groundObstacleImage)
+            -- 5% chance of obstacle being taller, so use taller sprite and adjust position
+            if randNum >= 95 then
+                groundObstacles[i] = gfx.sprite.new(groundObstacleImage2)
+                valueY = 115
+            else
+                groundObstacles[i] = gfx.sprite.new(groundObstacleImage)
+            end
             groundObstacles[i]:setCollideRect(0, 0, groundObstacles[i]:getSize())
         end
 
         -- move to starting position (can be used to reposition)
         groundObstacles[i]:moveTo(groundObstacleXValues[i], valueY)
-        
-        -- if randNum is greater than 95, stack multiple obstacles on top of each other
-        -- so that the player must duck (5% chance of this occurring, will occur during above ground obstacle placement)
-        if randNum >= 95 then
-            for j = 1, 2 do
-                local stackedObstacle = gfx.sprite.new(groundObstacleImage)
-                stackedObstacle:setCollideRect(0, 0, stackedObstacle:getSize())
-                stackedObstacle:moveTo(groundObstacleXValues[i], valueY - 30 * j) -- stack on top
-                table.insert(groundObstacles, stackedObstacle)
-            end
-        end
     end
 end
 
@@ -175,6 +171,7 @@ function reset ()
     for i in pairs(groundObstacles) do
         groundObstacles[i]:remove()
     end
+    groundObstacles = {}
     groundSprite:remove()
     gameState = title
 end
