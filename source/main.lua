@@ -46,9 +46,7 @@ local highestScores = {}
 local highestScoresLength = 0
 local maxHighScores <const> = 5
 local name = "AAA"
-local l1 = 65
-local l2 = 65
-local l3 = 65
+local nameLetters = {'A', 'A', 'A'}
 local nameIndex = 1
 
 -- better scheme for tracking gamestate
@@ -100,9 +98,9 @@ function drawTitle ()
     
     -- enter name msg
     gfx.drawText("Enter name: ", 140, 200)
-    gfx.drawText(string.char(l1), 240, 200)
-    gfx.drawText(string.char(l2), 252, 200)
-    gfx.drawText(string.char(l3), 264, 200)
+    gfx.drawText(nameLetters[1], 240, 200)
+    gfx.drawText(nameLetters[2], 252, 200)
+    gfx.drawText(nameLetters[3], 264, 200)
 
     -- start msg
     gfx.drawText("Press A to Start", 144, 220)
@@ -150,6 +148,7 @@ function reset ()
     isProjectileFired = false
     projectileSprite:remove()
     player:remove()
+    playerDuck:remove()
     for i in pairs(groundObstacles) do
         groundObstacles[i]:remove()
     end
@@ -253,6 +252,109 @@ function jumpKinematics()
     end
 end
 
+function changeLetter(num, forwards)
+
+    -- whether to increment or decrement the character
+    local changeBy = -1
+    if forwards then changeBy = 1 end
+    
+    -- change the character
+    nameLetters[num] = string.char(nameLetters[num]:byte() + changeBy)
+
+    -- character wrapping ('A' <-> 'Z')
+    if nameLetters[num]:byte() > 90 then
+        nameLetters[num] = string.char(65)
+    elseif nameLetters[num]:byte() < 65 then
+        nameLetters[num] = string.char(90)
+    end
+end
+
+-- displays title screen, lets player change name, lets players tart game
+function titleScreenLogic()
+    drawTitle()
+        
+    -- switch between char positions in name
+    if playdate.buttonJustPressed(playdate.kButtonLeft) and nameIndex > 1 then
+        nameIndex -= 1
+    end
+    if playdate.buttonJustPressed(playdate.kButtonRight) and nameIndex < 3 then
+        nameIndex += 1
+    end
+
+    -- update the actual character
+    if playdate.buttonJustPressed(playdate.kButtonUp) then 
+        changeLetter(nameIndex, true)
+    elseif playdate.buttonJustPressed(playdate.kButtonDown) then
+        changeLetter(nameIndex, false)
+    end
+
+    -- form name from character
+    name = nameLetters[1] .. nameLetters[2] .. nameLetters[3]
+
+    if playdate.buttonJustPressed(playdate.kButtonA) then
+        gameState = start
+    end
+end
+
+function duck()
+    if not isDucking then
+        player:remove()  -- Remove player sprite when ducking
+        playerDuck:add()  -- Add ducking sprite
+        playerDuck:playAnimation()  -- Start animation
+        playerDuck:setCollideRect(0, 10, 16, 17)  -- Adjust collision box for ducking (may need to adjust this value again)
+        playerDuck:moveTo(player.x, 170)  -- Move player down (to create the illusion of ducking) 
+        duckSound:play()
+        isDucking = true
+    end
+end
+
+function unduck() 
+    playerDuck:remove()  -- Remove ducking sprite when not ducking
+    player:add()  -- Add player sprite
+    player:setCollideRect(0, 0, 16, 27)  -- Reset collision box when not ducking
+    player:moveTo(player.x, 160)  -- Reset player position
+    player:playAnimation()  -- Restart animation if stopped
+    isDucking = false
+end
+
+function obstacleLogic()
+    for i, obstacleSprite in pairs(groundObstacles) do
+        -- move the obstacles towards the player
+        obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
+
+        -- if the obstacle is onscreen, render it
+        if obstacleSprite.x >= -7 and obstacleSprite.x <= 407 then
+            obstacleSprite:add()
+        -- otherwise, remove it
+        elseif obstacleSprite.x <= -7 then
+            obstacleSprite:remove()
+        end
+
+        -- check if the player has hit an obstacle
+        if #player:overlappingSprites() > 0 or #playerDuck:overlappingSprites() > 0 then
+            gameState = lost
+
+            -- update the highscore if necessary
+            addHighScore()
+        
+            loseSound:play()
+
+            break
+        end
+
+        -- check if the player has completed a round (last obstacle in 
+        -- round has gone offscreen) and update points/obstacle
+        if groundObstacles[groundObstacleCount].x <= 0 then
+            createObstacles()
+            score += 1
+            -- obstacles will come at player faster as game progresses
+            if (baseGroundObstacleSpeed + addedGroundObstacleSpeed > maxGroundObstacleSpeed) then
+                addedGroundObstacleSpeed = addedGroundObstacleSpeed + -0.2
+            end
+        end
+    end
+end
+
 -- Loads saved data
 local gameData = playdate.datastore.read()
 if gameData ~= nil then
@@ -262,16 +364,29 @@ else
 end
 
 function playdate.update ()
+    -- refresh screen
+    if gameState ~= lost then gfx.sprite.update() end
+
+    -- title screen
+    if gameState == title then titleScreenLogic() return end
+
+    gfx.drawText(score, 5, 5)
+    gfx.drawText("Like the game? Join Software Dev. Club today!", 25, 185)
+    gfx.drawText("https://discord.gg/Pvv2Eu8FrF", 80, 210)
+
     if gameState == start then
         drawBase()
         createObstacles()
         gameState = playing
+        
+        return -- not necessary, but allows cleaner code below (and doesn't cost much)
     end
     
     -- if the game is lost, then continuously print the game over message
     if gameState == lost then
         -- stop the player animation
         player:stopAnimation()
+        playerDuck:stopAnimation()
 
         -- print reset text
         gfx.drawText("(B to reset)", 200, 80)
@@ -285,7 +400,7 @@ function playdate.update ()
     end
 
     -- toggle the paused state
-    if gameState ~= title and gameState ~= lost and gameState ~= start and playdate.buttonJustPressed(playdate.kButtonB) then
+    if playdate.buttonJustPressed(playdate.kButtonB) then
         togglePause()
     end
 
@@ -293,139 +408,35 @@ function playdate.update ()
     if gameState == paused then return end
 
     -- Ducking logic
-    if playdate.buttonIsPressed(playdate.kButtonDown) and grounded and gameState == playing then
-        if not isDucking then
-            player:remove()  -- Remove player sprite when ducking
-            playerDuck:add()  -- Add ducking sprite
-            playerDuck:playAnimation()  -- Start animation
-            playerDuck:setCollideRect(0, 10, 16, 17)  -- Adjust collision box for ducking (may need to adjust this value again)
-            playerDuck:moveTo(player.x, 170)  -- Move player down (to create the illusion of ducking) 
-            duckSound:play()
-            isDucking = true
-        end
-    else
-        if isDucking then
-            playerDuck:remove()  -- Remove ducking sprite when not ducking
-            player:add()  -- Add player sprite
-            player:setCollideRect(0, 0, 16, 27)  -- Reset collision box when not ducking
-            player:moveTo(player.x, 160)  -- Reset player position
-            player:playAnimation()  -- Restart animation if stopped
-            isDucking = false
-        end
+    if playdate.buttonIsPressed(playdate.kButtonDown) and grounded then
+        duck()
+    elseif isDucking then
+        unduck()
     end
 
     -- jumping
-    if gameState == playing and playdate.buttonIsPressed(playdate.kButtonUp) and grounded and not isDucking then
+    if playdate.buttonIsPressed(playdate.kButtonUp) and grounded and not isDucking then
         velocity = -gravity * 0.5 -- negative is up
         grounded = false
         jumpSound:play()
     end
 
     -- y axis kinematics
-    if gameState == playing then jumpKinematics() end
+    jumpKinematics()
 
     -- cant fire a projectile if you just did or if you are in the air
-    if gameState == playing and playdate.buttonJustPressed(playdate.kButtonA) and not isProjectileFired and grounded then
+    if playdate.buttonJustPressed(playdate.kButtonA) and not isProjectileFired and grounded then
         projectileSprite:moveTo(45, 150)
         projectileSprite:add()
         isProjectileFired = true
         shootSound:play()
     end
 
-    -- refresh screen
-    gfx.sprite.update()
-
-    -- title screen
-    if gameState == title then
-        drawTitle()
-        
-        -- switch between char positions in name
-        if playdate.buttonJustPressed(playdate.kButtonLeft) and nameIndex > 1 then
-            nameIndex -= 1
-        end
-        if playdate.buttonJustPressed(playdate.kButtonRight) and nameIndex < 3 then
-            nameIndex += 1
-        end
-
-        -- update the actual character
-        if playdate.buttonJustPressed(playdate.kButtonUp) then
-            if nameIndex == 1 then
-                l1 += 1
-                if l1 > 90 then l1 = 65 end
-            elseif nameIndex == 2 then
-                l2 += 1
-                if l2 > 90 then l2 = 65 end
-            elseif nameIndex == 3 then
-                l3 += 1
-                if l3 > 90 then l3 = 65 end
-            end
-        end
-        if playdate.buttonJustPressed(playdate.kButtonDown) then
-            if nameIndex == 1 then
-                l1 -= 1
-                if l1 < 65 then l1 = 90 end
-            elseif nameIndex == 2 then
-                l2 -= 1
-                if l2 < 65 then l2 = 90 end
-            elseif nameIndex == 3 then
-                l3 -= 1
-                if l3 < 65 then l3 = 90 end
-            end
-        end
-
-        -- form name from character
-        name = string.char(l1) .. string.char(l2) .. string.char(l3)
-
-        if playdate.buttonJustPressed(playdate.kButtonA) then
-            gameState = start
-        end
-    end
-
-    if gameState == playing then
-        gfx.drawText(score, 5, 5)
-        gfx.drawText("Like the game? Join Software Dev. Club today!", 25, 185)
-        gfx.drawText("https://discord.gg/Pvv2Eu8FrF", 80, 210)
-
-        -- obstacle movement and collision detection
-        for i, obstacleSprite in pairs(groundObstacles) do
-            -- move the obstacles towards the player
-            obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
-
-            -- if the obstacle is onscreen, render it
-            if obstacleSprite.x >= -7 and obstacleSprite.x <= 407 then
-                obstacleSprite:add()
-            -- otherwise, remove it
-            elseif obstacleSprite.x <= -7 then
-                obstacleSprite:remove()
-            end
-
-            -- check if the player has hit an obstacle
-            if #player:overlappingSprites() > 0 then
-                gameState = lost
-
-                -- update the highscore if necessary
-                addHighScore()
-            
-                loseSound:play()
-
-                break
-            end
-
-            -- check if the player has completed a round (last obstacle in 
-            -- round has gone offscreen) and update points/obstacle
-            if groundObstacles[groundObstacleCount].x <= 0 then
-                createObstacles()
-                score += 1
-                -- obstacles will come at player faster as game progresses
-                if (baseGroundObstacleSpeed + addedGroundObstacleSpeed > maxGroundObstacleSpeed) then
-                    addedGroundObstacleSpeed = addedGroundObstacleSpeed + -0.2
-                end
-            end
-        end
-    end
+    -- obstacle movement and collision detection
+    obstacleLogic()
 
     -- move the projectile
-    if gameState == playing and isProjectileFired == true then
+    if isProjectileFired == true then
         projectileSprite:moveBy(3, -3)
         if projectileSprite.x > 400 or projectileSprite.y < 0 then
             projectileSprite:remove()
