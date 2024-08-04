@@ -31,6 +31,7 @@ local maxGroundObstacleSpeed <const> = -5
 local groundObstacles = {}  -- holds all obstacles, we do this because we need to keep track of multiple obstacles
 local groundObstacleXValues = {}
 local addedGroundObstacleSpeed = 0
+local tallObstacle = false
 
 -- for jumping
 local grounded = true -- refers to player
@@ -146,10 +147,16 @@ function createObstacles ()
 
         -- create obstacle if not exist
         if groundObstacles[i] == nil then
-            -- 5% chance of obstacle being taller, so use taller sprite and adjust position
-            if randNum >= 95 then
-                groundObstacles[i] = gfx.sprite.new(groundObstacleImage2)
-                valueY = 115
+            -- Only display tall obstacle once per round
+            if not tallObstacle then
+                -- 5% chance of obstacle being taller, so use taller sprite and adjust position
+                if randNum >= 95 then
+                    groundObstacles[i] = gfx.sprite.new(groundObstacleImage2)
+                    valueY = 115
+                    tallObstacle = true
+                else
+                    groundObstacles[i] = gfx.sprite.new(groundObstacleImage)
+                end
             else
                 groundObstacles[i] = gfx.sprite.new(groundObstacleImage)
             end
@@ -174,6 +181,7 @@ function reset ()
     groundObstacles = {}
     groundSprite:remove()
     gameState = title
+    tallObstacle = false
 end
 
 -- This whole function seems redundant, but apparently Lua does not have a good way to get the length of a table
