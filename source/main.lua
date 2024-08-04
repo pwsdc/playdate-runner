@@ -302,6 +302,12 @@ function titleScreenLogic()
     if playdate.buttonJustPressed(playdate.kButtonA) then
         gameState = start
     end
+
+    -- reset scores by pressing Up and B at same time
+    if playdate.buttonJustPressed(playdate.kButtonUp) and playdate.buttonJustPressed(playdate.kButtonB) then
+        highestScores = {}
+        highestScoresLength = 0
+    end
 end
 
 function duck()
