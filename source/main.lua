@@ -154,6 +154,9 @@ function reset()
     end
     groundSprite:remove()
     gameState = title
+    grounded = true
+    airAcceleration = gravity
+    velocity = 0
 end
 
 -- This whole function seems redundant, but apparently Lua does not have a good way to get the length of a table
