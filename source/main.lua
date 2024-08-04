@@ -180,7 +180,7 @@ function addHighScore()
         -- person got a score, but does it beat any score on the leaderboard?
         local newScore = false
         for i in pairs(highestScores) do
-            if score >= highestScores[i][2] or numOfHighScores() < maxHighScores then
+            if score > highestScores[i][2] or numOfHighScores() < maxHighScores then
                 newScore = true
                 break
             end
@@ -193,14 +193,15 @@ function addHighScore()
             end) -- sorts in decending order
 
             -- ensure number of high scores is limited
-            if numOfHighScores() > maxHighScores then
+            if numOfHighScores() >= maxHighScores then
                 highestScores[maxHighScores + 1] = nil
             end
 
             gfx.drawText("NEW HIGH SCORE!", 180, 60)
+            return
         end
 
-        return
+        gfx.drawText("YOU LOSER!", 200, 60)
     end
 
     gfx.drawText("YOU LOSER!", 200, 60)
