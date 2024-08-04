@@ -1,10 +1,10 @@
 -- Playdate Runner
 
 -- Thanks https://github.com/Whitebrim/AnimatedSprite for AnimatedSprite
-import 'AnimatedSprite.lua'
+import("AnimatedSprite.lua")
 
-local gfx <const> = playdate.graphics  -- common in playdate games, makes code cleaner
-local snd <const> = playdate.sound  -- for handling sound effects
+local gfx <const> = playdate.graphics -- common in playdate games, makes code cleaner
+local snd <const> = playdate.sound -- for handling sound effects
 
 -- create player
 -- make sure to update sprite from level 1-1 example
@@ -27,8 +27,9 @@ local groundObstacleImage <const> = gfx.image.new(20, 30, gfx.kColorBlack)
 local groundObstacleImage2 <const> = gfx.image.new(20, 80, gfx.kColorBlack)
 local groundObstacleCount <const> = 5  -- amount of obstacles in each "round"
 local baseGroundObstacleSpeed <const> = -2  -- obstacles are moving left, so this is negative
+
 local maxGroundObstacleSpeed <const> = -5
-local groundObstacles = {}  -- holds all obstacles, we do this because we need to keep track of multiple obstacles
+local groundObstacles = {} -- holds all obstacles, we do this because we need to keep track of multiple obstacles
 local groundObstacleXValues = {}
 local addedGroundObstacleSpeed = 0
 local tallObstacle = false
@@ -48,7 +49,7 @@ local highestScores = {}
 local highestScoresLength = 0
 local maxHighScores <const> = 5
 local name = "AAA"
-local nameLetters = {'A', 'A', 'A'}
+local nameLetters = { "A", "A", "A" }
 local nameIndex = 1
 
 -- better scheme for tracking gamestate
@@ -62,10 +63,10 @@ local shootSound <const> = snd.sampleplayer.new("sound/shoot1.wav")
 local loseSound <const> = snd.sampleplayer.new("sound/lose.wav")
 local duckSound <const> = snd.sampleplayer.new("sound/ducking.wav")
 
-function saveGameData ()
+function saveGameData()
     -- save high score leaderboard
     local gameData = {
-        currentHighestScores = highestScores
+        currentHighestScores = highestScores,
     }
 
     -- Serialize game data table into the datastore
@@ -84,9 +85,9 @@ function playdate.gameWillSleep()
     saveGameData()
 end
 
-function drawTitle ()
+function drawTitle()
     local yStart = 50
-    
+
     -- title
     gfx.drawText("Playdate Runner", 140, 10)
     gfx.drawText("High Scores: ", 155, 30)
@@ -97,7 +98,7 @@ function drawTitle ()
         gfx.drawText(highestScores[i][2], 220, yStart)
         yStart += 20
     end
-    
+
     -- enter name msg
     gfx.drawText("Enter name: ", 140, 200)
     gfx.drawText(nameLetters[1], 240, 200)
@@ -108,7 +109,7 @@ function drawTitle ()
     gfx.drawText("Press A to Start", 144, 220)
 end
 
-function drawBase ()
+function drawBase()
     -- add player sprite to screen
     player:moveTo(30, 160)
     -- these should probably not be constant values - if you hold your arms out you'll collide with something faster
@@ -128,6 +129,7 @@ end
 function createObstacles ()
     local baseX = 400 -- this is the edge of the playdate screen, but it could be something else
     local randNum = 0
+
 
     for i = 1, groundObstacleCount, 1 do
         -- generate a random number between 0 and 100
@@ -168,7 +170,7 @@ function createObstacles ()
     end
 end
 
-function reset ()
+function reset()
     score = 0
     addedGroundObstacleSpeed = 0
     isProjectileFired = false
@@ -186,21 +188,21 @@ end
 
 -- This whole function seems redundant, but apparently Lua does not have a good way to get the length of a table
 -- https://stackoverflow.com/questions/2705793/how-to-get-number-of-entries-in-a-lua-table
-function numOfHighScores ()
+function numOfHighScores()
     -- at least improve performance if at max length
     if highestScoresLength >= maxHighScores then
         return highestScoresLength
     end
-    
+
     highestScoresLength = 0
-    for j in pairs(highestScores) do
+    for _ in pairs(highestScores) do
         highestScoresLength += 1
     end
 
     return highestScoresLength
 end
 
-function addHighScore ()
+function addHighScore()
     if score > 0 then
         -- person got a score, but does it beat any score on the leaderboard?
         local newScore = false
@@ -212,14 +214,16 @@ function addHighScore ()
         end
 
         if newScore == true or numOfHighScores() < maxHighScores then
-            table.insert(highestScores, {name, score}) -- inserts at end of table
-            table.sort(highestScores, function(a, b) return a[2] > b[2] end)  -- sorts in decending order
-    
+            table.insert(highestScores, { name, score }) -- inserts at end of table
+            table.sort(highestScores, function(a, b)
+                return a[2] > b[2]
+            end) -- sorts in decending order
+
             -- ensure number of high scores is limited
             if numOfHighScores() > maxHighScores then
                 highestScores[maxHighScores + 1] = nil
             end
-    
+
             gfx.drawText("NEW HIGH SCORE!", 180, 60)
         end
 
@@ -239,12 +243,13 @@ function togglePause()
     end
 end
 
-
 -- applies projectile motion to the player when jumping/falling
 -- holding the up key decreases downwards acceleration (jump higher/fall slower)
 function jumpKinematics()
     -- if the player is on the ground, no acceleration should apply
-    if grounded then return end
+    if grounded then
+        return
+    end
 
     -- determine how fast to accelerate (fall) based on input
     -- (positive acceleration since down is positive)
@@ -259,21 +264,21 @@ function jumpKinematics()
     -- kinematics
     -- have: v0, dt, a
     -- need: dy, vf
-    
+
     -- dy = v0t + .5at^2
     -- (t = 1/f = 1/30)
-    local deltaY = (velocity * (1/30)) + (0.5 * airAcceleration * (1/30)^2)
+    local deltaY = (velocity * (1 / 30)) + (0.5 * airAcceleration * (1 / 30) ^ 2)
 
     -- vf = v0 + at
     -- dv = at
-    local deltaV = airAcceleration * 1/30
+    local deltaV = airAcceleration * 1 / 30
 
     -- update the player's position and velocity
     player:moveBy(0, deltaY)
     velocity += deltaV
 
     -- make sure grounded is set properly
-    if player.y >= 160 then 
+    if player.y >= 160 then
         grounded = true
         velocity = 0
         player:moveTo(30, 160) -- realign the player in case of bad frame collision
@@ -281,11 +286,12 @@ function jumpKinematics()
 end
 
 function changeLetter(num, forwards)
-
     -- whether to increment or decrement the character
     local changeBy = -1
-    if forwards then changeBy = 1 end
-    
+    if forwards then
+        changeBy = 1
+    end
+
     -- change the character
     nameLetters[num] = string.char(nameLetters[num]:byte() + changeBy)
 
@@ -300,7 +306,7 @@ end
 -- displays title screen, lets player change name, lets players tart game
 function titleScreenLogic()
     drawTitle()
-        
+
     -- switch between char positions in name
     if playdate.buttonJustPressed(playdate.kButtonLeft) and nameIndex > 1 then
         nameIndex -= 1
@@ -310,7 +316,7 @@ function titleScreenLogic()
     end
 
     -- update the actual character
-    if playdate.buttonJustPressed(playdate.kButtonUp) then 
+    if playdate.buttonJustPressed(playdate.kButtonUp) then
         changeLetter(nameIndex, true)
     elseif playdate.buttonJustPressed(playdate.kButtonDown) then
         changeLetter(nameIndex, false)
@@ -326,27 +332,27 @@ end
 
 function duck()
     if not isDucking then
-        player:remove()  -- Remove player sprite when ducking
-        playerDuck:add()  -- Add ducking sprite
-        playerDuck:playAnimation()  -- Start animation
-        playerDuck:setCollideRect(0, 10, 16, 17)  -- Adjust collision box for ducking (may need to adjust this value again)
-        playerDuck:moveTo(player.x, 170)  -- Move player down (to create the illusion of ducking) 
+        player:remove() -- Remove player sprite when ducking
+        playerDuck:add() -- Add ducking sprite
+        playerDuck:playAnimation() -- Start animation
+        playerDuck:setCollideRect(0, 10, 16, 17) -- Adjust collision box for ducking (may need to adjust this value again)
+        playerDuck:moveTo(player.x, 170) -- Move player down (to create the illusion of ducking)
         duckSound:play()
         isDucking = true
     end
 end
 
-function unduck() 
-    playerDuck:remove()  -- Remove ducking sprite when not ducking
-    player:add()  -- Add player sprite
-    player:setCollideRect(0, 0, 16, 27)  -- Reset collision box when not ducking
-    player:moveTo(player.x, 160)  -- Reset player position
-    player:playAnimation()  -- Restart animation if stopped
+function unduck()
+    playerDuck:remove() -- Remove ducking sprite when not ducking
+    player:add() -- Add player sprite
+    player:setCollideRect(0, 0, 16, 27) -- Reset collision box when not ducking
+    player:moveTo(player.x, 160) -- Reset player position
+    player:playAnimation() -- Restart animation if stopped
     isDucking = false
 end
 
 function obstacleLogic()
-    for i, obstacleSprite in pairs(groundObstacles) do
+    for _, obstacleSprite in pairs(groundObstacles) do
         -- move the obstacles towards the player
         obstacleSprite:moveBy(baseGroundObstacleSpeed + addedGroundObstacleSpeed, 0)
 
@@ -364,19 +370,19 @@ function obstacleLogic()
 
             -- update the highscore if necessary
             addHighScore()
-        
+
             loseSound:play()
 
             break
         end
 
-        -- check if the player has completed a round (last obstacle in 
+        -- check if the player has completed a round (last obstacle in
         -- round has gone offscreen) and update points/obstacle
         if groundObstacles[groundObstacleCount].x <= 0 then
             createObstacles()
             score += 1
             -- obstacles will come at player faster as game progresses
-            if (baseGroundObstacleSpeed + addedGroundObstacleSpeed > maxGroundObstacleSpeed) then
+            if baseGroundObstacleSpeed + addedGroundObstacleSpeed > maxGroundObstacleSpeed then
                 addedGroundObstacleSpeed = addedGroundObstacleSpeed + -0.2
             end
         end
@@ -391,12 +397,17 @@ else
     highestScores = {}
 end
 
-function playdate.update ()
+function playdate.update()
     -- refresh screen
-    if gameState ~= lost then gfx.sprite.update() end
+    if gameState ~= lost then
+        gfx.sprite.update()
+    end
 
     -- title screen
-    if gameState == title then titleScreenLogic() return end
+    if gameState == title then
+        titleScreenLogic()
+        return
+    end
 
     gfx.drawText(score, 5, 5)
     gfx.drawText("Like the game? Join Software Dev. Club today!", 25, 185)
@@ -406,10 +417,10 @@ function playdate.update ()
         drawBase()
         createObstacles()
         gameState = playing
-        
+
         return -- not necessary, but allows cleaner code below (and doesn't cost much)
     end
-    
+
     -- if the game is lost, then continuously print the game over message
     if gameState == lost then
         -- stop the player animation
@@ -418,7 +429,7 @@ function playdate.update ()
 
         -- print reset text
         gfx.drawText("(B to reset)", 200, 80)
-        
+
         -- allow the player to restart
         if playdate.buttonIsPressed(playdate.kButtonB) then
             reset()
@@ -432,8 +443,10 @@ function playdate.update ()
         togglePause()
     end
 
-    -- don't do anything if the game is paused 
-    if gameState == paused then return end
+    -- don't do anything if the game is paused
+    if gameState == paused then
+        return
+    end
 
     -- Ducking logic
     if playdate.buttonIsPressed(playdate.kButtonDown) and grounded then
