@@ -24,8 +24,9 @@ local groundSprite <const> = gfx.sprite.new(groundImage)
 
 -- create ground obstacles player jumps over
 local groundObstacleImage <const> = gfx.image.new(20, 30, gfx.kColorBlack)
-local groundObstacleCount <const> = 5 -- amount of obstacles in each "round"
-local baseGroundObstacleSpeed <const> = -2 -- obstacles are moving left, so this is negative
+local groundObstacleCount <const> = 5  -- amount of obstacles in each "round"
+local baseGroundObstacleSpeed <const> = -2  -- obstacles are moving left, so this is negative
+
 local maxGroundObstacleSpeed <const> = -5
 local groundObstacles = {} -- holds all obstacles, we do this because we need to keep track of multiple obstacles
 local groundObstacleXValues = {}
@@ -123,10 +124,23 @@ function drawBase()
     groundSprite:add()
 end
 
-function createObstacles()
+function createObstacles ()
     local baseX = 400 -- this is the edge of the playdate screen, but it could be something else
+    local randNum = 0
+
 
     for i = 1, groundObstacleCount, 1 do
+        -- generate a random number between 0 and 100
+        randNum = math.random(0, 100)
+
+        -- set the y value based on the random number
+        -- 30% chance of y value being at 140 (above ground) 
+        -- 70% chance of y value being at 160 (at ground level)
+        local valueY = 160
+        if randNum >= 70 then
+            valueY = 140
+        end
+
         -- generate x coords for obstacles
         groundObstacleXValues[i] = math.random(baseX, baseX + 50)
         baseX += 175
@@ -136,9 +150,8 @@ function createObstacles()
             groundObstacles[i] = gfx.sprite.new(groundObstacleImage)
             groundObstacles[i]:setCollideRect(0, 0, groundObstacles[i]:getSize())
         end
-
         -- move to starting position (can be used to reposition)
-        groundObstacles[i]:moveTo(groundObstacleXValues[i], 160)
+        groundObstacles[i]:moveTo(groundObstacleXValues[i], valueY)
     end
 end
 
@@ -152,6 +165,7 @@ function reset()
     for i in pairs(groundObstacles) do
         groundObstacles[i]:remove()
     end
+    groundObstacles = {}
     groundSprite:remove()
     gameState = title
     grounded = true
