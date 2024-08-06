@@ -4,7 +4,7 @@ A runner style game created for the Playdate. This is intended as a proof of con
 
 ## How to Play
 
-Avoid obstacles for as long as possible. Press Up to jump, Down to duck, A to shoot, and B to pause the game.
+Avoid obstacles for as long as possible. Press Up to jump, Down to duck, A to shoot, and B to pause the game. High scores can be reset by pressing Up and B on the title screen.
 
 ## Contributions
 
