@@ -4,7 +4,8 @@
         {
             "request": "launch",
             "type": "playdate",
-            "name": "Run app in Playdate simulator",
+            "name": "Playdate: Debug",
+            "preLaunchTask": "${defaultBuildTask}",
             "source": "${workspaceRoot}/source",
             "output": "${workspaceRoot}/output.pdx",
             // Optionally set sdkPath if not PLAYDATE_SDK_PATH is configured.
