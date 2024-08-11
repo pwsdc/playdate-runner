@@ -58,5 +58,5 @@ At this point, try running the Playdate Simulator to ensure it works. If it does
 
 ### Final Setup
 
-- In VS Code, install the Playdate extension [here](https://marketplace.visualstudio.com/items?itemName=Orta.playdate).
+- In VS Code, install the Playdate extension [here](https://marketplace.visualstudio.com/items?itemName=Orta.playdate), and, optionally, the Playdate Debugger extension [here](https://marketplace.visualstudio.com/items?itemName=midouest.playdate-debug) (for debugging tools). 
 - Clone the repo and open it in VS Code. If all went well, press Start Debugging (default key is F5) to run the game!
