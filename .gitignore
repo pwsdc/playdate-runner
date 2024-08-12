@@ -1,6 +1,13 @@
-\output.pdx
-\.vscode\*
-!\.vscode\settings.json
-!\.vscode\launch.json
-.luarc.json
-.editorconfig
+# whitelist system
+
+# ignore everything
+/*
+
+# except these:
+!/.vscode
+!/.vscode/*
+!/source
+!/source/*
+!/.gitignore
+!/LICENSE
+!/README.*
